@@ -754,6 +754,122 @@ body:not(.admin-mode) .admin-only{display:none !important}
    RISE 사업비 관리 대시보드
 ====================================================== */
 
+var SHEET_ID = '1QFj3lK6yQLGqmWvnDIIiPG9rG-nYkErKjupN-iEEMig';
+ 
+function sheetUrl(sheetName) {
+  return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+    '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(sheetName);
+}
+ 
+function parseCSV(text) {
+  var rows = [], lines = text.split('\n');
+  var headers = parseCSVRow(lines[0]);
+  for (var i = 1; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;
+    var vals = parseCSVRow(line);
+    var obj = {};
+    headers.forEach(function(h, idx) {
+      obj[h.trim().replace(/^"|"$/g, '')] = (vals[idx] || '').trim().replace(/^"|"$/g, '');
+    });
+    rows.push(obj);
+  }
+  return rows;
+}
+ 
+function parseCSVRow(line) {
+  var result = [], cur = '', inQ = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (c === '"') { inQ = !inQ; }
+    else if (c === ',' && !inQ) { result.push(cur); cur = ''; }
+    else { cur += c; }
+  }
+  result.push(cur);
+  return result;
+}
+ 
+function extractDriveId(urlOrId) {
+  if (!urlOrId) return '';
+  var m = urlOrId.match(/\/d\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : urlOrId.trim();
+}
+ 
+function showSheetLoading(wrapId, msg) {
+  var el = document.getElementById(wrapId);
+  if (el) el.innerHTML = '<div style="text-align:center;padding:16px 0;font-size:12px;color:var(--color-text-tertiary)"><i class="ti ti-loader spin" style="font-size:16px;display:block;margin-bottom:6px"></i>' + (msg || '불러오는 중...') + '</div>';
+}
+ 
+function loadNoticesFromSheet() {
+  showSheetLoading('notice-list', '공지사항 불러오는 중...');
+  fetch(sheetUrl('공지사항'))
+    .then(function(r) { return r.text(); })
+    .then(function(csv) {
+      var rows = parseCSV(csv);
+      NOTICES = rows
+        .filter(function(r) { return r.title || r['title']; })
+        .map(function(r, i) {
+          return {
+            id: parseInt(r.id || (i + 1)),
+            type: (r.type || 'gen').toLowerCase(),
+            title: r.title || '',
+            date: r.date || '',
+            content: r.content || ''
+          };
+        });
+      noticeNextId = NOTICES.length + 10;
+      renderNoticeList();
+    })
+    .catch(function(err) {
+      console.warn('공지사항 로드 실패, 기본 데이터 사용:', err);
+      renderNoticeList();
+    });
+}
+ 
+function loadGuidesFromSheet() {
+  fetch(sheetUrl('지침'))
+    .then(function(r) { return r.text(); })
+    .then(function(csv) {
+      var rows = parseCSV(csv);
+      GUIDES = rows
+        .filter(function(r) { return r.nm; })
+        .map(function(r) {
+          return {
+            nm: r.nm || '',
+            id: extractDriveId(r.id || '')
+          };
+        })
+        .filter(function(r) { return r.nm && r.id; });
+      updateGuideCounts();
+      renderGuides();
+    })
+    .catch(function(err) {
+      console.warn('지침 로드 실패, 기본 데이터 사용:', err);
+      renderGuides();
+    });
+}
+ 
+function loadFormsFromSheet() {
+  fetch(sheetUrl('서식'))
+    .then(function(r) { return r.text(); })
+    .then(function(csv) {
+      var rows = parseCSV(csv);
+      FORMS = rows
+        .filter(function(r) { return r.nm; })
+        .map(function(r) {
+          var pdfId = extractDriveId(r.pdfId || '');
+          var dlId  = extractDriveId(r.dlId  || '') || pdfId;
+          return { nm: r.nm || '', pdfId: pdfId, dlId: dlId };
+        })
+        .filter(function(r) { return r.nm && r.pdfId; });
+      updateFormCounts();
+      renderFormPreview();
+    })
+    .catch(function(err) {
+      console.warn('서식 로드 실패, 기본 데이터 사용:', err);
+      renderFormPreview();
+    });
+}  
 var ADMIN_PW = 'Glocal2026!';
 var isAdmin = false;
 var noticeEditMode = false;
