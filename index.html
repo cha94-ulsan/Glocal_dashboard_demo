@@ -1079,7 +1079,7 @@ function saveNaModal(){
   closeNa();renderNoticeList();
 }
 function getTodayStr(){var d=new Date();return(d.getMonth()+1).toString().padStart(2,'0')+'.'+(d.getDate()).toString().padStart(2,'0');}
-renderNoticeList();
+loadNoticesFromSheet();
 
 /* ── 사업 관련 지침 데이터 ── */
 var GUIDES=[
@@ -1146,7 +1146,7 @@ function renderGuides(){
     return '<div class="guide-item"><span class="g-ext ge-pdf">PDF</span><span class="g-nm" title="'+esc(g.nm)+'">'+esc(short)+'</span><div class="g-btns"><a class="g-btn g-btn-dl" href="https://drive.google.com/uc?export=download&id='+g.id+'" target="_blank" download><i class="ti ti-download" style="font-size:11px"></i>다운로드</a></div>'+editBtns+'</div>';
   }).join('');
 }
-renderGuides();
+loadGuidesFromSheet();
 
 /* ── 서식 데이터 ── */
 var FORMS=[
@@ -1178,7 +1178,7 @@ function formItemHTML(f,idx,cls,showEdit){
   return '<div class="'+cls+'"><div class="form-ico-sm"><i class="ti ti-file-text"></i></div><div class="form-nm">'+esc(f.nm)+'</div><div class="form-btns"><a class="g-btn g-btn-dl" href="https://drive.google.com/uc?export=download&id='+f.dlId+'" target="_blank" download><i class="ti ti-download" style="font-size:11px"></i>다운로드</a></div>'+editPart+'</div>';
 }
 function renderFormPreview(){v('form-preview-list').innerHTML=FORMS.slice(0,3).map(function(f,i){return formItemHTML(f,i,'form-row',true);}).join('');}
-renderFormPreview();
+loadFormsFromSheet();
 function openFormModal(){v('form-modal-body').innerHTML=FORMS.map(function(f,i){return formItemHTML(f,i,'modal-form-row',false);}).join('');openModal('form-modal');}
 
 /* ======================================================
