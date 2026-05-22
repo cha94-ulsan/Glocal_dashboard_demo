@@ -397,6 +397,7 @@ body:not(.admin-mode) .admin-only{display:none !important}
 .dev-badge{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#854F0B;background:#FAEEDA;border:1.5px solid #FAC775;border-radius:100px;padding:7px 18px}
 .dev-sub{font-size:11px;color:var(--color-text-tertiary)}
 @media (prefers-color-scheme: dark){.dev-overlay{background:rgba(30,30,28,0.82)}}
+.tv-common-note{font-size:11px;color:var(--color-text-secondary);margin-top:8px;padding:7px 12px;background:var(--color-background-secondary);border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);display:flex;align-items:flex-start;gap:5px;line-height:1.5}  
 </style>
 </head>
 <body>
@@ -726,20 +727,20 @@ body:not(.admin-mode) .admin-only{display:none !important}
   <div id="tv-rule-banner" class="rule-banner" style="background:#E6F1FB;color:#0C447C;border-color:#B5D4F4"><i class="ti ti-file-certificate" style="font-size:14px;flex-shrink:0;margin-top:1px"></i><span id="tv-rule-txt">울산대학교 여비기준지침 적용 — 일비 25,000원/일 · 식비 12,000원/식 (정액)</span></div>
   <div class="sect">기본 정보</div>
   <div class="fg">
-    <div class="fc"><div class="lbl">출장지</div><select class="tv-sel" id="tv-dest" onchange="tvCalc()"><option value="seoul">서울</option><option value="metro">광역시</option><option value="other" selected>그외 지역</option></select></div>
-    <div class="fc"><div class="lbl">출장일수</div><select class="tv-sel" id="tv-days" onchange="updateProvCnt();tvCalc()"><option value="1">1일</option><option value="2">2일</option><option value="3">3일</option><option value="4">4일</option><option value="5">5일</option></select></div>
+    <div class="fc"><div class="lbl">출장지</div><select class="tv-sel" id="tv-dest" onchange="handleDestChange()"><option value="other" selected>그외 지역</option><option value="seoul">서울</option><option value="metro">광역시</option><option value="local">근무지 내 출장</option></select></div>
+    <div class="fc"><div class="lbl" id="days-lbl">출장일수</div><select class="tv-sel" id="tv-days" onchange="updateProvCnt();tvCalc()"><option value="1">1일</option><option value="2">2일</option><option value="3">3일</option><option value="4">4일</option><option value="5">5일</option></select></div>
     <div class="fc" id="meal-count-wrap"><div class="lbl">식사 횟수 (총)</div><select class="tv-sel" id="tv-meals" onchange="tvCalc()"><option value="0">0식</option><option value="1">1식</option><option value="2">2식</option><option value="3">3식</option><option value="4">4식</option><option value="6">6식</option><option value="9">9식</option></select></div>
     <div class="fc" id="meal-prov-wrap" style="display:none"><div class="lbl">식사 제공 여부</div><select class="tv-sel" id="tv-meal-prov" onchange="updateMealUI();tvCalc()"><option value="no">제공 없음</option><option value="yes">일부/전부 제공</option></select></div>
     <div class="fc" id="meal-prov-cnt-wrap" style="display:none"><div class="lbl">제공된 식사 수</div><select class="tv-sel" id="tv-prov-cnt" onchange="tvCalc()"></select></div>
   </div>
-  <div class="sect">숙박</div>
-  <div class="fg">
+  <div class="sect" id="sect-stay">숙박</div>
+  <div class="fg" id="stay-fg">
     <div class="fc"><div class="lbl">숙박 여부</div><select class="tv-sel" id="tv-stay" onchange="tvCalc()"><option value="no">숙박 없음</option><option value="yes">숙박 있음</option></select></div>
     <div class="fc" id="stay-nights-wrap" style="display:none"><div class="lbl">숙박 일수</div><select class="tv-sel" id="tv-nights" onchange="tvCalc()"><option value="1">1박</option><option value="2">2박</option><option value="3">3박</option><option value="4">4박</option></select></div>
     <div class="fc full" id="stay-cost-wrap" style="display:none"><div class="lbl">실제 숙박비 (원, 1박당)</div><input class="tv-input" type="number" id="tv-stay-cost" placeholder="예: 90000" oninput="tvCalc()"></div>
   </div>
-  <div class="sect">교통</div>
-  <div class="fg">
+  <div class="sect" id="sect-trans">교통</div>
+  <div class="fg" id="trans-fg">
     <div class="fc full"><div class="lbl">교통수단</div><select class="tv-sel" id="tv-trans" onchange="tvCalc()"><option value="public">대중교통 (철도·항공·선박·버스)</option><option value="car">자가 차량</option></select></div>
     <div class="fc full" id="trans-cost-wrap"><div class="lbl">실제 교통비 (원)</div><input class="tv-input" type="number" id="tv-trans-cost" placeholder="예: 53400" oninput="tvCalc()"></div>
   </div>
@@ -1337,6 +1338,9 @@ var CFG={
   student:{badgeClass:'badge-student',bannerBg:'#EAF3DE',bannerColor:'#27500A',bannerBorder:'#C0DD97',pilBg:'#EAF3DE',pilColor:'#3B6D11',label:'학생'},
   external:{badgeClass:'badge-external',bannerBg:'#EEEDFE',bannerColor:'#3C3489',bannerBorder:'#CECBF6',pilBg:'#EEEDFE',pilColor:'#534AB7',label:'외부인'}
 };
+  var TV_COMMON_NOTE='<div class="tv-common-note"><i class="ti ti-info-circle" style="font-size:12px;flex-shrink:0;margin-top:1px"></i><span>이외 사항은 울산대학교 여비기준지침, 공무원 여비 규정을 참고하여 주시기 바랍니다.</span></div>';
+
+function handleDestChange(){var dest=v('tv-dest').value,isLocal=dest==='local',daysLbl=v('days-lbl');if(daysLbl)daysLbl.textContent=isLocal?'출장시간':'출장일수';var daysSel=v('tv-days');if(daysSel){daysSel.innerHTML=isLocal?'<option value="under4">4시간 미만</option><option value="over4">4시간 이상</option>':'<option value="1">1일</option><option value="2">2일</option><option value="3">3일</option><option value="4">4일</option><option value="5">5일</option>';}var mealSel=v('tv-meals');if(mealSel){mealSel.innerHTML=isLocal?'<option value="0">0식</option><option value="1">1식</option><option value="2">2식</option><option value="3">3식</option>':'<option value="0">0식</option><option value="1">1식</option><option value="2">2식</option><option value="3">3식</option><option value="4">4식</option><option value="6">6식</option><option value="9">9식</option>';}var ss=v('sect-stay'),sf=v('stay-fg'),st=v('sect-trans'),tf=v('trans-fg');if(isLocal){if(ss)ss.style.display='none';if(sf)sf.style.display='none';if(st)st.style.display='none';if(tf)tf.style.display='none';}else{if(ss)ss.style.display='';if(sf)sf.style.display='';if(st)st.style.display='';if(tf)tf.style.display='';}updateMealUI();tvCalc();}
 function updateProvCnt(){var days=parseInt(v('tv-days').value)||1;var max=days*3;var sel=v('tv-prov-cnt');var cur=parseInt(sel.value)||0;sel.innerHTML='';for(var i=0;i<=max;i++){var o=document.createElement('option');o.value=i;o.textContent=i+'식';if(i===cur)o.selected=true;sel.appendChild(o);}}
 function setType(t,btn){
   curType=t;var c=CFG[t];
@@ -1359,7 +1363,8 @@ function updateMealUI(){
   else{mCnt.style.display='none';mProv.style.display='none';mProvCnt.style.display='none';}
 }
 function tvCalc(){
-  var dest=v('tv-dest').value,days=n('tv-days'),stay=v('tv-stay').value,isCar=v('tv-trans').value==='car';
+var dest=v('tv-dest').value;if(dest==='local'){var c=CFG[curType],pilStyle='display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:100px;margin-left:6px;background:'+c.pilBg+';color:'+c.pilColor,timeVal=v('tv-days').value,isOver4=timeVal==='over4',dailyLocal=isOver4?20000:10000,timeLabel=isOver4?'4시간 이상 — 20,000원':'4시간 미만 — 10,000원',meals=n('tv-meals'),mealHTML='';if(curType==='staff'){var mealAmt=12000*meals,total=dailyLocal+mealAmt;mealHTML='<div class="dl-row"><div class="dl-name"><i class="ti ti-bowl-spoon" style="font-size:13px"></i>식비</div><div class="dl-right"><div class="dl-amt">'+mealAmt.toLocaleString()+'원</div><div class="dl-note">12,000원 × '+meals+'식</div></div></div>';v('result-area').innerHTML='<div class="rbox"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">산출 내역<span style="'+pilStyle+'">'+c.label+' · 근무지 내 출장</span></div><div class="dl-row"><div class="dl-name"><i class="ti ti-sun" style="font-size:13px"></i>일비</div><div class="dl-right"><div class="dl-amt">'+dailyLocal.toLocaleString()+'원</div><div class="dl-note">'+timeLabel+'</div></div></div>'+mealHTML+'</div><div class="total-row"><span class="total-lbl">예상 합계</span><span class="total-amt">'+total.toLocaleString()+'원</span></div><div class="rule-banner" style="background:#E6F1FB;color:#0C447C;border-color:#B5D4F4;margin-top:10px"><i class="ti ti-info-circle" style="font-size:14px;flex-shrink:0;margin-top:1px"></i><span>근무지 내 출장: 숙박비·교통비 미지급. 일비만 산정 (4시간 이상 20,000원 / 4시간 미만 10,000원)</span></div>'+TV_COMMON_NOTE;}else{mealHTML='<div class="dl-row"><div class="dl-name"><i class="ti ti-bowl-spoon" style="font-size:13px"></i>식비</div><div class="dl-right"><div class="dl-amt" style="font-size:12px;color:var(--color-text-secondary)">별도 산정</div><div class="dl-note" style="color:#791F1F;font-weight:500">증빙서류 검토 후 지급. 사업단 문의 필요</div></div></div>';v('result-area').innerHTML='<div class="rbox"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">산출 내역<span style="'+pilStyle+'">'+c.label+' · 근무지 내 출장</span></div><div class="dl-row"><div class="dl-name"><i class="ti ti-sun" style="font-size:13px"></i>일비</div><div class="dl-right"><div class="dl-amt">'+dailyLocal.toLocaleString()+'원</div><div class="dl-note">'+timeLabel+'</div></div></div>'+mealHTML+'</div><div class="total-row"><span class="total-lbl">예상 합계</span><span class="total-amt">'+dailyLocal.toLocaleString()+'원 + 식비</span></div><div class="rule-banner" style="background:#EAF3DE;color:#27500A;border-color:#C0DD97;margin-top:10px"><i class="ti ti-info-circle" style="font-size:14px;flex-shrink:0;margin-top:1px"></i><span>학생·외부인 근무지 내 출장 식비는 사업단 별도 기준 적용. 사업단에 문의하세요.</span></div>'+TV_COMMON_NOTE;}return;}
+var days=n('tv-days'),stay=v('tv-stay').value,isCar=v('tv-trans').value==='car';
   v('stay-nights-wrap').style.display=stay==='yes'?'flex':'none';
   v('stay-cost-wrap').style.display=stay==='yes'?'flex':'none';
   v('trans-cost-wrap').style.display=isCar?'none':'flex';
@@ -1378,11 +1383,12 @@ function tvCalc(){
   else{docs.push({text:'통행료 영수증 (해당 시)'});docs.push({text:'주차료 영수증 (해당 시)'});}
   var total=daily+mealAmt+lodgeAmt+(isCar?0:transAmt);
   var pilStyle='display:inline-flex;align-items:center;font-size:11px;padding:2px 8px;border-radius:100px;margin-left:6px;background:'+c.pilBg+';color:'+c.pilColor;
-  var carInfo=isCar?'<div class="dl-car-info"><i class="ti ti-info-circle" style="font-size:12px;margin-right:4px"></i><strong>자가 차량 교통비 산정 기준</strong><br>· 이동거리 10km당 유종별 1L 단가 정액 지급<br>· 실제 이동거리(편도) 확인 후 왕복 기준으로 산출<br>· 통행료·주차비는 실비로 교통비에 포함 가능<br>· 증빙: 통행료 영수증, 주차료 영수증 제출</div>':'';
+  var carInfo=isCar?'<div class="dl-car-info"><i class="ti ti-info-circle" style="font-size:12px;margin-right:4px"></i><strong>자가 차량 교통비 산정 기준</strong><br>· 이동거리 10km당 유종별 1L 단가 정액 지급<br>· 실제 이동거리(편도) 확인 후 왕복 기준으로 산출<br>· 통행료·주차비는 실비로 교통비에 포함 가능<br>· 증빙: 통행료 영수증, 주차료 영수증 제출<br>· 휘발유·경유·LPG 차량 유류 가격 조회: 한국석유공사(<a href="https://www.opinet.co.kr" target="_blank" style="color:#633806">www.opinet.co.kr</a>)<br>· 전기·수소자동차 충전요금 조회: 환경부 무공해차 통합누리집(<a href="https://www.ev.co.kr" target="_blank" style="color:#633806">www.ev.co.kr</a>)</div>':'';
   var transRow=isCar?'<div class="dl-row"><div class="dl-name"><i class="ti ti-car" style="font-size:13px"></i>교통비</div><div class="dl-right"><div class="dl-amt" style="color:var(--color-text-tertiary);font-size:12px">실비 정산 (별도 산출)</div>'+carInfo+'</div></div>':'<div class="dl-row"><div class="dl-name"><i class="ti ti-train" style="font-size:13px"></i>교통비</div><div class="dl-right"><div class="dl-amt">'+(transAmt?transAmt.toLocaleString()+'원':'입력 필요')+'</div><div class="dl-note">실비 정산 (승차권·영수증 증빙)</div></div></div>';
   var html='<div class="rbox"><div style="font-size:12px;font-weight:500;color:var(--color-text-secondary);margin-bottom:8px">산출 내역<span style="'+pilStyle+'">'+c.label+'</span></div><div class="dl-row"><div class="dl-name"><i class="ti ti-sun" style="font-size:13px"></i>일비</div><div class="dl-right"><div class="dl-amt">'+daily.toLocaleString()+'원</div><div class="dl-note">25,000원 × '+days+'일</div></div></div><div class="dl-row"><div class="dl-name"><i class="ti ti-bowl-spoon" style="font-size:13px"></i>식비</div><div class="dl-right"><div class="dl-amt">'+mealAmt.toLocaleString()+'원</div><div class="dl-note">'+mealNote+'</div></div></div><div class="dl-row"><div class="dl-name"><i class="ti ti-bed" style="font-size:13px"></i>숙박비</div><div class="dl-right"><div class="dl-amt">'+(stay==='yes'?lodgeAmt.toLocaleString()+'원':'해당 없음')+'</div><div class="dl-note">'+(stay==='yes'?lodgeNote:'당일 출장')+'</div></div></div>'+transRow+'</div><div class="total-row"><span class="total-lbl">예상 합계</span><span class="total-amt">'+total.toLocaleString()+'원'+(isCar?' + 교통비':'')+'</span></div>'+(isCar?'<div class="total-note">※ 교통비(자가차량) 제외 금액 — 실비 정산 후 합산</div>':'');
   if(warns.length)html+='<div class="tv-warn"><i class="ti ti-alert-triangle" style="font-size:13px;margin-right:4px"></i>'+warns.join('<br>')+'</div>';
   if(docs.length){html+='<div class="doc-box-tv"><div class="doc-tv-title"><i class="ti ti-paperclip" style="font-size:13px;margin-right:4px"></i>필요 증빙서류</div>';docs.forEach(function(d,i){html+='<div class="doc-tv-item">'+(i+1)+'. '+d.text+'</div>';if(d.sub)html+='<div class="doc-tv-sub"><i class="ti ti-info-circle" style="font-size:11px;margin-right:3px"></i>'+d.sub+'</div>';});html+='</div>';}
+  html+=TV_COMMON_NOTE; 
   v('result-area').innerHTML=html;
 }
 updateProvCnt();tvCalc();
